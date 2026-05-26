@@ -82,7 +82,49 @@ description: |
 
 ---
 
-## ⚙️ STEP 1 · Discord 봇 세팅 (공식 README 기준 7단계)
+> 💡 **선택 · 처음 채널이라면 fakechat 데모 5분** — Discord 봇 발급 전에 채널 메커니즘만 먼저 체험하고 싶다면:
+> ```
+> /plugin install fakechat@claude-plugins-official
+> claude --channels plugin:fakechat@claude-plugins-official
+> # 브라우저 → http://localhost:8787 → 메시지 입력 → Claude 답신
+> ```
+> 인증·외부 서비스 없이 localhost 만으로 채널 흐름 체험. 익숙하면 스킵하고 아래 STEP 1 진행.
+
+---
+
+## ⚙️ STEP 1 · Discord 봇 세팅 (공식 README 기준 7단계 + 분기 점검 1단계)
+
+### STEP 1.0 · 신규 봇 분기 점검 (자동 5초) ⭐ 신규
+
+본 스킬은 **신규 봇 개설** 만 다룸. 진입 즉시 메인 슬롯 (`~/.claude/channels/discord/`) 의 토큰 유무로 두 분기 자동 선택:
+
+```bash
+# Claude 가 자동 실행
+test -f ~/.claude/channels/discord/.env \
+  && grep -q '^DISCORD_BOT_TOKEN=' ~/.claude/channels/discord/.env \
+  && echo "1-a (메인 슬롯에 토큰 있음 — 별도 슬롯 사용)" \
+  || echo "1-b (메인 슬롯 비어있음 — 메인 슬롯 사용)"
+
+# 1-a 일 때 다음 빈 슬롯 번호 자동 선정
+ls -d ~/.claude/channels/discord-*/ 2>/dev/null | wc -l
+```
+
+| 분기 | 조건 | 사용 슬롯 | 토큰 저장 방식 |
+|---|---|---|---|
+| **1-a** | 메인 슬롯에 토큰 **있음** | `~/.claude/channels/discord-N/` (자동 번호) | 수동 `.env` 작성 (슬래시 명령 우회) |
+| **1-b** | 메인 슬롯에 토큰 **없음** | `~/.claude/channels/discord/` (메인) | `/discord:configure <token>` 슬래시 명령 |
+
+게이트:
+```
+분기 결정:
+  - 메인 슬롯 토큰: ✅/❌
+  - 진입 분기: 1-a (별도 슬롯) OR 1-b (메인 슬롯)
+  - 1-a 일 때 새 슬롯 경로: ~/.claude/channels/discord-N/
+
+이 분기 OK 인가요? (y) / 다른 분기 원함 (n)
+```
+
+⚠️ **1-a 흐름 핵심 주의** — `/discord:configure` 와 `/discord:access` 슬래시 명령은 메인 슬롯 (`~/.claude/channels/discord/`) 고정 경로 사용. 1-a 흐름에서는 새 슬롯에 토큰을 **수동으로** 작성해야 함 (STEP 1.6 분기 안내 참고). `DISCORD_STATE_DIR` 환경변수가 슬래시 명령에도 영향을 주는지는 본 스킬 작성 시점 (2026-05-26 · plugin v0.0.4) 기준 **미검증**. 1-a 진입 시 안전한 흐름은 수동 `.env` + `DISCORD_STATE_DIR` 셸 환경변수 + `claude --channels` 실행 후 그 세션 내에서 페어링.
 
 ### STEP 1.1 · 사전 점검 (자동 5초)
 
