@@ -1,0 +1,38 @@
+# Secrets — 절대 커밋 금지
+.env
+.env.*
+.env.local
+.env.bak.*
+*.token
+secrets/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Backups
+*.bak
+*~
+
+# Node / Bun
+node_modules/
+.bun/
+
+# Temp / build
+tmp/
+.tmp/
+dist/
+build/
+
+# Claude Code 로컬 캐시 (다른 사용자에게 의미 없음)
+.claude/local/

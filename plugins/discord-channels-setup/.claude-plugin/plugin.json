@@ -1,0 +1,15 @@
+{
+  "name": "discord-channels-setup",
+  "description": "Claude Code Channels Discord 플러그인 4단계 인터랙티브 설치 스킬. Discord 봇 발급 → 양방향 검증 → 도구·기능 안내 → Gmail/Calendar 결합 실습.",
+  "version": "0.1.0",
+  "keywords": [
+    "discord",
+    "channels",
+    "claude-code",
+    "gmail",
+    "google-calendar",
+    "marketing",
+    "skill",
+    "korean"
+  ]
+}

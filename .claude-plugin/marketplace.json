@@ -1,0 +1,23 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "discord-channels-setup",
+  "description": "Claude Code Channels Discord 플러그인 설치 + Gmail / Google Calendar 결합을 단계별로 안내하는 스킬 모음. 마케터·1인 운영자가 폰 DM 한 줄로 Claude 호출 + Gmail·Calendar 자동 처리하는 환경을 30분 안에 구축.",
+  "owner": {
+    "name": "한성국",
+    "email": "steve@wmbb.kr"
+  },
+  "plugins": [
+    {
+      "name": "discord-channels-setup",
+      "description": "공식 Channels Discord 플러그인 4단계 인터랙티브 설치 스킬. Discord 봇 발급 → 양방향 검증 → 도구·기능 안내 → Gmail/Calendar 결합 실습까지.",
+      "author": {
+        "name": "한성국",
+        "email": "steve@wmbb.kr"
+      },
+      "category": "productivity",
+      "source": "./plugins/discord-channels-setup",
+      "version": "0.1.0",
+      "tags": ["discord", "channels", "gmail", "google-calendar", "marketing", "korean"]
+    }
+  ]
+}
