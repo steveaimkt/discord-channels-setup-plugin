@@ -21,7 +21,7 @@
 Claude Code 세션에서:
 
 ```
-/plugin marketplace add <YOUR_GITHUB_USERNAME>/discord-channels-setup-plugin
+/plugin marketplace add steveaimkt/discord-channels-setup-plugin
 /plugin install discord-channels-setup@discord-channels-setup
 /reload-plugins
 ```
