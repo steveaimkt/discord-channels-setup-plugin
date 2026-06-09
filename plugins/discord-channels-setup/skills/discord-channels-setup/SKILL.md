@@ -384,17 +384,23 @@ STEP 2 진행할까요? (y / n)
 
 ### 5-1. 사전 점검 (특히 윈도우)
 
-플러그인 설치는 Claude Code 가 **내부 서브프로세스로 Bun 을 실행** 하기 때문에 :
+플러그인 설치는 Claude Code 가 **내부 서브프로세스로 Bun 을 실행** 하고, **`/plugin marketplace add` 는 git 으로 마켓플레이스를 clone** 하기 때문에 :
 - `bun` 이 Claude 서브프로세스의 PATH 에 보여야 함
+- **`git` 이 설치돼 있어야 함** (마켓플레이스 clone 에 필수)
 - claude.ai 로그인 상태여야 함
 - 네트워크가 `github.com` 접근 가능해야 함
 
 ```
-# Claude Code 내부 셸에서 (또는 Claude 에게 시켜서) 1줄 확인 :
+# Claude Code 내부 셸에서 (또는 Claude 에게 시켜서) 2줄 확인 :
 !bun --version   ← 버전 출력되면 OK
+!git --version   ← 버전 출력되면 OK
 ```
 
-`bun: command not found` 가 뜨면 → STEP 1-1 의 Bun PATH 절차로 복귀.
+`bun: command not found` → STEP 1-1 의 Bun PATH 절차로 복귀.
+`git: command not found` (⚠️ **윈도우에서 자주 발생**) → git 먼저 설치 :
+- **Windows**: https://git-scm.com/download/win 다운로드 → 설치 (기본 옵션) → **새 PowerShell 창** 에서 `git --version` 확인
+- **macOS**: `xcode-select --install` (보통 이미 설치됨)
+- 설치 후 Claude Code 완전 재시작 (서브프로세스 PATH 반영) → 다시 STEP 5
 
 ### 5-2. 설치 실행
 
@@ -823,6 +829,7 @@ skip 하고 바로 첫 에이전트로 가려면:
 
 | 증상 | 원인 | 해결 |
 |---|---|---|
+| STEP 5 `/plugin marketplace add` 에서 `git not found` / clone 실패 | 윈도우에 git 미설치 (마케터 PC 흔함) | https://git-scm.com/download/win 설치 → 새 PowerShell → Claude 재시작 후 재실행 |
 | STEP 5 `/plugin install` 3~10분 멈춤 | OneDrive 가 `%USERPROFILE%\.claude` 동기화 | STEP 0.5-3 OneDrive 백업 해제 후 재실행 |
 | STEP 1 Bun 설치 중 CPU 100% · 매우 느림 | Defender 실시간 보호가 Bun 캐시 스캔 | STEP 0.5-2 `Add-MpPreference` 예외 등록 |
 | `irm bun.sh/install.ps1 \| iex` 거부 / 무반응 | PowerShell 실행 정책 Restricted | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` |
