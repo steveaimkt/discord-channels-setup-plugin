@@ -42,6 +42,13 @@ description: |
   폰 디스코드 → 봇 DM → PC 의 Claude 가 분석·답신.
   ⚠️ Claude Code 세션이 켜져 있는 동안에만 작동.
 
+  ⚠️ 실행 위치 (가장 중요) : 반드시 "터미널에서 켠 claude" 여야 합니다.
+     · 맥    → Terminal / iTerm 에서  claude
+     · 윈도우 → PowerShell 에서        claude
+     VSCode · Cursor 등 IDE 확장 안에서는 STEP 5(/plugin)·STEP 7(--channels)
+     이 동작하지 않습니다("/plugin isn't available"). 확장에서 시작했다면
+     지금 터미널 창을 열어 claude 로 다시 들어온 뒤 진행하세요.
+
 ────────────────────────────────
 
 총 11 STEP · 약 30~40분.
@@ -174,6 +181,17 @@ New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" `
 ---
 
 ## STEP 1 · 사전 점검 (자동 + 사용자 확인)
+
+### 1-0. 실행 환경 확인 (가장 먼저 · 양 OS 공통) ⭐
+
+이 셋업은 **터미널에서 켠 `claude`** 에서만 완료된다. IDE 확장 세션이면 STEP 5·7 에서 반드시 막힌다.
+
+빠른 자가 진단 — 사용자에게 묻는다:
+> **지금 Claude 를 어디서 켰나요?**
+> - ⓐ 맥 Terminal / iTerm 또는 윈도우 PowerShell 에서 `claude` 입력 → ✅ 그대로 진행
+> - ⓑ VSCode · Cursor 등 편집기 안의 Claude 패널 → ⚠️ **여기서 멈추고** 터미널 창을 열어 해당 프로젝트 폴더에서 `claude` 로 다시 시작
+
+판단 팁: 지금 세션에서 `/plugin` 입력 시 `isn't available in this environment` 가 뜨면 ⓑ 환경이다. 이 경우 STEP 5 도 실패하므로 터미널로 옮긴 뒤 본 스킬을 다시 호출한다.
 
 ### 1-1. Bun 런타임
 
