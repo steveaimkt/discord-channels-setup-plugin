@@ -1,210 +1,386 @@
 ---
 name: discord-channels-setup
 description: |
-  Claude Code Channels Discord 플러그인 (Anthropic 공식 `discord@claude-plugins-official`) 4단계 인터랙티브 설치 스킬. 마케터·1인 운영자 기준. 4단계 흐름:
-  ① Discord 봇 세팅 (공식 README 기준 7단계)
-  ② 정상 작동 검증 (Online · 폰 DM · reply · react · edit · fetch 도구 시연)
-  ③ 작업 가능 업무 표 정리 (도구 5개 + 시나리오 8개 + 한계 4개 + 부가 기능 4개)
-  ④ Gmail + Google Calendar 결합 실습 (폰 DM → Claude 분석 → 답신)
+  Discord Channels (Anthropic 공식 `discord@claude-plugins-official`) 셋업 스킬. 폰 디스코드 DM ↔ Claude Code 세션 양방향. **맥북 + 윈도우** 모두 지원. 11 STEP 인터랙티브 게이트형:
+
+  ① STEP 0~9 · Discord ↔ Claude 연동 (필수)
+  ② STEP 10 · Gmail + Calendar Connector 연동 (완성)
+  ③ STEP 11 · 마케팅 MCP 10종을 Discord 에서 함께 사용 (안내)
 
   자동 호출 트리거:
-  - **"디스코드 channels 설치하자"** ⭐ 주요 트리거
-  - "Discord channels setup"
-  - "Claude Channels Discord 설치"
-  - "공식 디스코드 봇 설치"
-  - "Channels Discord 봇 만들자"
-  - "claude-plugins-official discord"
+  - **"디스코드 채널 설치"** ⭐
+  - **"디스코드 채널 세팅"** ⭐
+  - **"디스코드 channels 설치하자"** ⭐
+  - **"폰으로 디스코드에서 클로드 부르기"** ⭐
+  - "Discord Channels 셋업" · "discord channels setup"
+  - "claude --channels 디스코드 연결"
 
   특이점:
-  - 출처: https://github.com/anthropics/claude-plugins-official/blob/main/external_plugins/discord/README.md
-  - 사전 요구: Bun + claude.ai 로그인 + Claude Code v2.1.80+ + Pro/Max (Team/Enterprise 는 관리자 채널 활성화 필수)
-  - 노출 도구: `reply` · `react` · `edit_message` · `fetch_messages` · `download_attachment` (5개)
-  - 한계: 세션 의존 (`--channels` 활성 세션 떠 있어야 작동), 메시지 조회 최대 100개, Discord 검색 API 미지원, 첨부 ≤10개/25MB
-  - cron 무인 자동 발송은 Channels 한계. 무인 알림은 Discord Webhook 별도 권장.
-  - 호스팅 옵션: caffeinate / 데스크톱 24시간 / Mac mini / Raspberry Pi / VPS (STEP 4.5 참조)
+  - **macOS + Windows + Linux** 모두 지원 · 셸·경로 자동 분기
+  - **Claude Code v2.1.80+** · **claude.ai 로그인** · **Bun** 필수
+  - 노출 도구 5개: `reply` · `react` · `edit_message` · `fetch_messages` · `download_attachment`
+  - **Team / Enterprise** 계정은 관리자가 `channelsEnabled: true` 활성화 필요
+  - 출처: https://github.com/anthropics/claude-plugins-official/tree/main/external_plugins/discord
 ---
 
-# Discord Channels 설치 + Gmail/Calendar 결합 (Claude Code Plugin Skill)
+# Discord Channels 셋업 (맥북 + 윈도우)
 
-> 본 스킬은 Anthropic 공식 Channels Discord 플러그인 (`discord@claude-plugins-official`) 만 사용하는 4단계 인터랙티브 설치 가이드.
->
-> 출처: [공식 README](https://github.com/anthropics/claude-plugins-official/blob/main/external_plugins/discord/README.md) · [Channels 공식 문서](https://code.claude.com/docs/ko/channels)
+> Anthropic 공식 Channels 플러그인으로 **외부 Discord 메시지를 실행 중인 Claude Code 세션으로 푸시**. 폰에서 봇에게 DM → PC 의 Claude 가 분석·답신.
+> 출처: [공식 README](https://github.com/anthropics/claude-plugins-official/blob/main/external_plugins/discord/README.md) · [Channels 문서](https://code.claude.com/docs/ko/channels)
 
-## 🎬 스킬 시작 시 메시지
+---
 
-본 스킬이 호출되면 Claude 는 다음과 같이 시작 멘트를 출력:
+## 🎬 시작 멘트
+
+스킬이 호출되면 Claude 는 다음과 같이 출력 :
 
 ```
-🤖 Discord Channels (공식) 단독 노선 설치를 시작합니다.
+🤖 Discord Channels 셋업을 시작합니다 (맥북 / 윈도우 / Linux 공통).
 
 핵심 한 가지:
-
-  Channels = 실행 중인 Claude Code 세션으로 이벤트를 푸시하는 MCP 서버.
-  Discord 메시지가 도착하면 Claude 가 분석하고 답신.
-  ⚠️ 세션이 열려 있는 동안에만 이벤트 도착. 항상 켜진 운영은 백그라운드 프로세스 필요.
+  Channels = 실행 중인 Claude Code 세션으로 Discord 메시지를 푸시하는 MCP 서버.
+  폰 디스코드 → 봇 DM → PC 의 Claude 가 분석·답신.
+  ⚠️ Claude Code 세션이 켜져 있는 동안에만 작동.
 
 ────────────────────────────────
 
-총 4단계 · 30~50분 (Gmail/Calendar 실습 포함).
+총 11 STEP · 약 30~40분.
 
-  STEP 1 · Discord 봇 세팅 (15~20분 · 사용자 + Claude)
-       1.1 사전 점검 (Bun · Claude Code 버전 · claude.ai 로그인)
-       1.2 Bot 생성 (Developer Portal)
-       1.3 Message Content Intent 활성화
-       1.4 OAuth 6 권한 + 서버 초대
-       1.5 플러그인 설치 (/plugin install discord@claude-plugins-official)
-       1.6 토큰 구성 (/discord:configure <token>)
-       1.7 채널 활성화 재시작 (claude --channels plugin:discord@...)
-       1.8 페어링 (DM → 코드 → /discord:access pair → policy allowlist)
+▶ Discord ↔ Claude 연동 (필수)
+  STEP 0  OS 자동 감지
+  STEP 0.5 [Windows 만] 사전 최적화 (Defender·OneDrive·실행정책·LongPath)
+  STEP 1  사전 점검 (Bun·Claude Code·claude.ai·Discord 서버·계정 타입)
+  STEP 2  Discord Bot 생성
+  STEP 3  Message Content Intent 활성화
+  STEP 4  봇 서버 초대 (OAuth + 6 권한)
+  STEP 5  Channels 플러그인 설치
+  STEP 6  Bot 토큰 등록
+  STEP 7  --channels 모드 재시작
+  STEP 8  페어링 + allowlist 잠금
+  STEP 9  폰 DM 양방향 검증
 
-  STEP 2 · 정상 작동 검증 (5분 · 사용자)
-       2.1 Bot Online 표시 확인
-       2.2 폰 DM 양방향 검증
-       2.3 reply · react · fetch_messages 도구 1회씩 시연
+▶ 외부 도구 연결 (완성)
+  STEP 10 Gmail + Calendar Connector 연동 (5단계)
 
-  STEP 3 · 작업 가능 업무 표 (3분 · Claude 안내)
-       3.1 노출 도구 5개 표
-       3.2 마케터 시나리오 8개 표
-       3.3 다른 MCP 결합 패턴 표
-       3.4 한계 4가지 명시
+▶ 마케팅 MCP 결합 안내
+  STEP 11 마케팅 MCP 10종을 Discord 에서 함께 사용
 
-  STEP 4 · Gmail + Google Calendar 결합 실습 (10~15분 · 양방향)
-       4.1 사전 점검 (Claude.ai 통합 활성 확인)
-       4.2 시나리오 A · 오늘 일정 조회 (폰 DM → Calendar → 답신)
-       4.3 시나리오 B · CS 메일 분류 (폰 DM → Gmail → 답신)
-       4.4 시나리오 C · 일정 추가 (폰 DM → Calendar 쓰기 → 확인)
-       4.5 자동화 확장 안내 (launchd + Webhook)
+각 단계마다 사용자 입력을 기다리며 진행. 막히면 'help' 라고 답하세요.
 
-시작할까요? (y/n)
+시작할까요? (y / n)
 ```
 
-사용자 OK 시 STEP 1 진행.
+사용자 `y` → STEP 0 진행.
 
 ---
 
-> 💡 **선택 · 처음 채널이라면 fakechat 데모 5분** — Discord 봇 발급 전에 채널 메커니즘만 먼저 체험하고 싶다면:
-> ```
-> /plugin install fakechat@claude-plugins-official
-> claude --channels plugin:fakechat@claude-plugins-official
-> # 브라우저 → http://localhost:8787 → 메시지 입력 → Claude 답신
-> ```
-> 인증·외부 서비스 없이 localhost 만으로 채널 흐름 체험. 익숙하면 스킵하고 아래 STEP 1 진행.
+# ⚙️ Discord ↔ Claude 연동 (STEP 0~9)
 
----
-
-## ⚙️ STEP 1 · Discord 봇 세팅 (공식 README 기준 7단계 + 분기 점검 1단계)
-
-### STEP 1.0 · 신규 봇 분기 점검 (자동 5초) ⭐ 신규
-
-본 스킬은 **신규 봇 개설** 만 다룸. 진입 즉시 메인 슬롯 (`~/.claude/channels/discord/`) 의 토큰 유무로 두 분기 자동 선택:
+## STEP 0 · 사용자 OS 자동 감지 (자동 5초)
 
 ```bash
-# Claude 가 자동 실행
-test -f ~/.claude/channels/discord/.env \
-  && grep -q '^DISCORD_BOT_TOKEN=' ~/.claude/channels/discord/.env \
-  && echo "1-a (메인 슬롯에 토큰 있음 — 별도 슬롯 사용)" \
-  || echo "1-b (메인 슬롯 비어있음 — 메인 슬롯 사용)"
-
-# 1-a 일 때 다음 빈 슬롯 번호 자동 선정
-ls -d ~/.claude/channels/discord-*/ 2>/dev/null | wc -l
+uname -s 2>/dev/null || echo "Windows"
 ```
 
-| 분기 | 조건 | 사용 슬롯 | 토큰 저장 방식 |
+- `Darwin` → macOS
+- `Linux` → Linux (macOS 명령과 호환 대부분)
+- `Windows` / `MINGW*` / `CYGWIN*` → Windows (PowerShell)
+
+게이트 :
+```
+감지된 OS: macOS (또는 Windows / Linux)
+
+맞나요? (y → 진행 / n → 수동 지정)
+```
+
+→ **macOS / Linux** 면 STEP 1 로. **Windows** 면 STEP 0.5 (사전 최적화) 진행.
+
+---
+
+## STEP 0.5 · 윈도우 사전 최적화 (Windows 만 · 3분) ⭐
+
+⚠️ **STEP 0 에서 Windows 로 감지된 경우에만 진행. macOS / Linux 는 건너뜁니다.**
+
+윈도우에서 셋업이 5~10배 느려지는 5가지 함정을 먼저 풉니다. 미조치 시 STEP 1 Bun 설치·STEP 5 플러그인 설치·STEP 7 첫 기동에서 누적 30분~수 시간 지연.
+
+### 0.5-1. 5가지 원인 (영향 큰 순)
+
+| # | 원인 | 폭발 지점 | 미조치 시 |
 |---|---|---|---|
-| **1-a** | 메인 슬롯에 토큰 **있음** | `~/.claude/channels/discord-N/` (자동 번호) | 수동 `.env` 작성 (슬래시 명령 우회) |
-| **1-b** | 메인 슬롯에 토큰 **없음** | `~/.claude/channels/discord/` (메인) | `/discord:configure <token>` 슬래시 명령 |
+| 1 | OneDrive 가 `%USERPROFILE%\.claude\` 동기화 | STEP 5 플러그인 · STEP 7 첫 기동 | 5~10배 느려짐 + 파일 락 |
+| 2 | Defender 실시간 보호가 Bun 캐시·plugin 폴더 스캔 | STEP 1 Bun · STEP 5 `/plugin install` | 3~5배 + CPU 100% |
+| 3 | PowerShell 실행 정책 Restricted | STEP 1 Bun 설치 스크립트 거부 | 사용자 5~10분 헤맴 |
+| 4 | PATH 미반영 → 같은 창에서 재시도 루프 | STEP 1 직후 `bun --version` 실패 | 무한 재시도 |
+| 5 | claude.ai OAuth 방화벽 첫 프롬프트 | STEP 1-3 `claude login` | 30초~영구 멈춤 |
 
-게이트:
+선택: **한국어 사용자명 (`C:\Users\홍길동\`)** + Long Path 260자 한계로 `npm i -g @anthropic-ai/claude-code` 가 스톨하는 케이스 → 0.5-2 의 `LongPathsEnabled` 로 해결.
+
+### 0.5-2. 일괄 최적화 스크립트 (관리자 PowerShell · 1분)
+
+**Windows 시작 메뉴 → PowerShell 우클릭 → '관리자 권한으로 실행'** 후 :
+
+```powershell
+# (1) Defender 예외 등록 — 가장 큰 효과
+Add-MpPreference -ExclusionPath "$env:USERPROFILE\.bun"
+Add-MpPreference -ExclusionPath "$env:USERPROFILE\.claude"
+Add-MpPreference -ExclusionPath "$env:APPDATA\npm"
+Add-MpPreference -ExclusionProcess "bun.exe"
+Add-MpPreference -ExclusionProcess "node.exe"
+Add-MpPreference -ExclusionProcess "claude.exe"
+
+# (2) PowerShell 실행 정책 (현재 사용자만 · Bun 설치 스크립트용)
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force
+
+# (3) Long Path 지원 (관리자 1회 · 한국어 사용자명 대응)
+New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" `
+  -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
 ```
-분기 결정:
-  - 메인 슬롯 토큰: ✅/❌
-  - 진입 분기: 1-a (별도 슬롯) OR 1-b (메인 슬롯)
-  - 1-a 일 때 새 슬롯 경로: ~/.claude/channels/discord-N/
 
-이 분기 OK 인가요? (y) / 다른 분기 원함 (n)
+3개 모두 성공 메시지 (또는 "already exists") 가 나와야 합니다.
+
+### 0.5-3. OneDrive 백업 해제 (수동 1분)
+
+```
+설정 → 계정 → Windows 백업 → 'OneDrive 폴더 동기화 관리' →
+  '문서' / '바탕 화면' 백업 OFF
+
+(이미 동기화 중이라면)
+  탐색기에서 %USERPROFILE% 입력 →
+  .claude / .bun 폴더가 'C:\Users\<이름>\OneDrive\...' 안에 있는지 확인 →
+  있으면 OneDrive 밖 (예: 'C:\Users\<이름>\.claude') 으로 이동 →
+  OneDrive 아이콘 → 일시 중지 (셋업 동안)
 ```
 
-⚠️ **1-a 흐름 핵심 주의** — `/discord:configure` 와 `/discord:access` 슬래시 명령은 메인 슬롯 (`~/.claude/channels/discord/`) 고정 경로 사용. 1-a 흐름에서는 새 슬롯에 토큰을 **수동으로** 작성해야 함 (STEP 1.6 분기 안내 참고). `DISCORD_STATE_DIR` 환경변수가 슬래시 명령에도 영향을 주는지는 본 스킬 작성 시점 (2026-05-26 · plugin v0.0.4) 기준 **미검증**. 1-a 진입 시 안전한 흐름은 수동 `.env` + `DISCORD_STATE_DIR` 셸 환경변수 + `claude --channels` 실행 후 그 세션 내에서 페어링.
+### 0.5-4. STEP 1 진행 전 필수 주의사항
 
-### STEP 1.1 · 사전 점검 (자동 5초)
+- Bun / Claude Code 설치 후엔 **반드시 새 PowerShell 창** 열기 (PATH 반영)
+- `claude login` 직후 **Windows 방화벽 프롬프트가 뜨면 'Allow' 클릭** (개인 + 공용 네트워크 모두 체크 권장)
+- WSL 의 Bun 과 네이티브 Windows Bun 은 별개. **본 강의는 네이티브 PowerShell 사용**
+
+### STEP 0.5 종료 게이트
+```
+질문 · 윈도우 사전 최적화 완료했나요?
+  - Defender 예외 3개          : ✅ / 건너뜀
+  - 실행 정책 RemoteSigned     : ✅ / 이미 설정
+  - LongPathsEnabled           : ✅ / 이미 설정
+  - OneDrive 백업 해제         : ✅ / 해당 없음
+  - 방화벽 'Allow' 클릭 준비   : ✅
+
+답변 (y / skip / help) :
+```
+
+`skip` → STEP 1 진행하되 셋업 중 멈추면 본 STEP 0.5 로 복귀.
+
+---
+
+## STEP 1 · 사전 점검 (자동 + 사용자 확인)
+
+### 1-1. Bun 런타임
+
+| OS | 확인 | 설치 |
+|---|---|---|
+| **macOS / Linux** | `bun --version` | `curl -fsSL https://bun.sh/install \| bash` |
+| **Windows** | `bun --version` (PowerShell) | `powershell -c "irm bun.sh/install.ps1 \| iex"` |
+
+설치 후 새 터미널 / PowerShell 창 필요.
+
+#### ⚠️ 윈도우 Bun 설치 누락 / 실패 시 (가장 자주 발생)
+
+증상: 설치 명령은 완료된 것 같은데 새 PowerShell 창에서 `bun --version` 이 "명령을 찾을 수 없음" 으로 뜸.
+
+체크 순서 :
+
+```powershell
+# (1) 실제로 설치된 위치 확인
+Test-Path "$env:USERPROFILE\.bun\bin\bun.exe"
+#  True  → 설치 OK, PATH 만 빠진 상태 → (3) 으로
+#  False → 설치 자체 실패 → (2) 재설치
+
+# (2) 강제 재설치 (관리자 PowerShell 권장)
+Remove-Item -Recurse -Force "$env:USERPROFILE\.bun" -ErrorAction SilentlyContinue
+powershell -ExecutionPolicy Bypass -c "irm bun.sh/install.ps1 | iex"
+
+# (3) PATH 수동 추가 (사용자 환경변수 · 영구)
+[Environment]::SetEnvironmentVariable(
+  "Path",
+  [Environment]::GetEnvironmentVariable("Path","User") + ";$env:USERPROFILE\.bun\bin",
+  "User"
+)
+
+# (4) 현재 창에서 즉시 적용
+$env:Path += ";$env:USERPROFILE\.bun\bin"
+bun --version
+```
+
+여전히 실패하면 **수동 설치 (Plan B)** :
+```
+1. https://github.com/oven-sh/bun/releases/latest 접속
+2. 'bun-windows-x64.zip' 다운로드
+3. 압축 해제 후 bun.exe → C:\Users\<이름>\.bun\bin\ 에 복사
+4. 위 (3) PATH 수동 추가 실행
+5. 새 PowerShell 창 → bun --version 확인
+```
+
+⚠️ **WSL 의 Bun 은 사용 금지**. Claude Code 가 네이티브 Windows 에서 실행되면 WSL Bun 을 찾을 수 없음. 반드시 PowerShell 에서 위 절차로 설치.
+
+### 1-2. Claude Code 버전 (v2.1.80+)
 
 ```bash
-# 런타임 3개 자동 확인 (Claude 가 실행)
-bun --version          # 1.0+ 필수
-claude --version       # v2.1.80+ 필수
-# claude.ai 로그인 상태 확인 (수동)
+claude --version
 ```
 
-게이트:
+v2.1.80 미만 → `npm i -g @anthropic-ai/claude-code@latest` (OS 공통)
+
+### 1-3. claude.ai 로그인 확인
+
+```
+질문 1 · claude.ai 계정으로 로그인되어 있나요?
+  (Pro / Max / Team / Enterprise 모두 가능 · API Key 인증 불가)
+
+  - 확인: 'claude' 실행 후 상태표시줄에 본인 이메일 보이면 OK
+  - 안 보이면: 'claude login' 으로 OAuth 로그인
+
+답변 (y / n / unsure) :
+```
+
+### 1-4. Discord 계정 + 본인 서버
+
+```
+질문 2 · 봇을 추가할 본인 Discord 서버가 있나요?
+  - 없으면 Discord 앱 좌측 '+' → 'Create My Own' → 'For me and my friends'
+
+답변 (y / n) :
+```
+
+### 1-5. 계정 타입 (Team/Enterprise 만 추가 확인)
+
+```
+질문 3 · 본인 계정 타입은? (1 / 2)
+  1. Pro 또는 Max (개인)
+  2. Team 또는 Enterprise (회사)
+```
+
+`2` 응답 시 :
+```
+⚠️ Team/Enterprise 는 관리자가 channelsEnabled: true 활성화 필수.
+   claude.ai → Admin Settings → Claude Code → Channels 토글 ON
+   본인이 관리자가 아니면 관리자에게 요청 후 재시작.
+```
+
+### STEP 1 종료 게이트
 ```
 사전 점검 결과:
-  - Bun: ✅ 1.x.x
-  - Claude Code: ✅ v2.1.123
-  - claude.ai 로그인: 사용자가 직접 확인 (Pro/Max OK · Team/Enterprise 는 관리자 채널 활성화 필수)
+  - Bun                 : ✅ 1.x.x
+  - Claude Code         : ✅ v2.1.123
+  - claude.ai 로그인    : (응답)
+  - Discord 서버 보유   : (응답)
+  - 계정 타입           : Pro/Max 또는 Team 관리자 활성 확인
 
-진행하시려면 y, 막힘은 m
+STEP 2 진행할까요? (y / n)
 ```
 
-### STEP 1.2 · Discord Bot 생성 (사용자 직접 · 3분)
+---
+
+## STEP 2 · Discord Bot 생성 (사용자 5분)
 
 ```
-브라우저에서:
+브라우저에서 https://discord.com/developers/applications 열기
 
-① https://discord.com/developers/applications 접속 → 로그인
-② 우상단 "New Application" → 이름 입력 (예: my-claude-bot · 본인이 정한 봇 이름)
-③ 좌측 "Bot" 탭
-④ Username 설정 → "Reset Token" → "Yes, do it!" → 토큰 복사
-   ⚠️ 토큰은 한 번만 표시. 메모장에 즉시 저장.
-   ⚠️ Bot A 토큰 (서드파티) 과 헷갈리지 말 것. 본 봇은 Channels 전용.
-
-다음 (y) / 막힘 (m)
+순서 :
+  1. 우측 상단 'New Application' 클릭
+  2. 이름 입력 (예: 'My Claude Bot' · 한국어 가능)
+  3. 약관 동의 → 'Create'
+  4. 좌측 메뉴 'Bot' 탭
+  5. 'Reset Token' → 'Yes, do it!' → 토큰 복사 ⭐
+     ⚠️ 토큰은 1회만 표시. 메모장에 즉시 임시 보관.
 ```
 
-📸 캡처 포인트: Bot 탭의 Token 복사 직후 화면
+게이트 :
+```
+질문 · 토큰을 복사했나요?
+  - 토큰 형식: 'MTI4Njk...' (70자 내외)
+  - 여기에 붙여넣지 마세요. STEP 6 에서 별도 안내.
 
-### STEP 1.3 · Message Content Intent 활성화 (사용자 · 1분)
+답변 (y / n / lost) :
+```
+
+`lost` → 'Reset Token' 재실행으로 재발급.
+
+---
+
+## STEP 3 · Message Content Intent 활성화 (사용자 30초)
 
 ```
-같은 Bot 페이지 아래로 스크롤 → "Privileged Gateway Intents" 섹션:
+같은 Bot 페이지에서 아래로 스크롤 :
 
-⭐ Message Content Intent 만 토글 ON (Presence·Members 는 불필요)
+  'Privileged Gateway Intents' 섹션 →
+    ✅ Message Content Intent 토글 ON ⭐ (필수)
+    (Presence·Members 는 불필요)
 
-→ 우측 상단 "Save Changes" 클릭 (녹색 버튼)
-
-완료 (y) / 막힘 (m)
+  하단 'Save Changes' 클릭
 ```
 
 ⚠️ Intent 누락이 가장 자주 발생하는 실수. 페어링 단계에서 봇이 응답 안 함.
 
-### STEP 1.4 · OAuth 6 권한 + 서버 초대 (사용자 · 3분)
-
+게이트 :
 ```
-좌측 메뉴 "OAuth2" → "URL Generator":
+질문 · Intent ON + Save Changes 완료했나요?
 
-① Scopes (1개):
-   ✅ bot
-
-② Bot Permissions (6개):
-   ✅ View Channels
-   ✅ Send Messages
-   ✅ Send Messages in Threads
-   ✅ Read Message History
-   ✅ Attach Files
-   ✅ Add Reactions
-
-③ 화면 하단 "Generated URL" 복사
-④ 새 탭에서 URL 열기 → 본인 서버 선택 → "Authorize"
-⑤ reCAPTCHA 통과 → "✅ Authorized"
-⑥ Discord 서버 회원 목록에 봇이 추가됐는지 확인
-
-다음 (y) / 막힘 (m)
+답변 (y / n) :
 ```
 
-⚠️ Bot A (서드파티) 권한 7개와 다름. **공식은 6개만**. `applications.commands` scope 와 `Manage Messages`·`Use Slash Commands` 권한 없음.
+---
 
-### STEP 1.5 · 플러그인 설치 (Claude Code 안에서 · 2분)
+## STEP 4 · 봇 서버 초대 (사용자 1분)
 
-현재 Claude Code 세션에서 직접 실행:
+```
+같은 Developer Portal 에서 :
+
+  좌측 메뉴 'OAuth2' → 'URL Generator'
+
+  Scopes (1개) : ✅ bot
+  Bot Permissions (6개) :
+    ✅ View Channels
+    ✅ Send Messages
+    ✅ Send Messages in Threads
+    ✅ Read Message History
+    ✅ Attach Files
+    ✅ Add Reactions
+
+  하단 'Generated URL' 복사 → 새 탭에 붙여넣기 →
+    본인 서버 선택 → 'Authorize' → 캡차 통과
+
+  Discord 서버 → 멤버 리스트에 봇 추가 확인.
+```
+
+게이트 :
+```
+질문 · 봇이 서버 멤버 리스트에 보이나요? (오프라인 — 정상)
+
+답변 (y / n) :
+```
+
+---
+
+## STEP 5 · Channels 플러그인 설치 (Claude Code 안에서 1분)
+
+### 5-1. 사전 점검 (특히 윈도우)
+
+플러그인 설치는 Claude Code 가 **내부 서브프로세스로 Bun 을 실행** 하기 때문에 :
+- `bun` 이 Claude 서브프로세스의 PATH 에 보여야 함
+- claude.ai 로그인 상태여야 함
+- 네트워크가 `github.com` 접근 가능해야 함
+
+```
+# Claude Code 내부 셸에서 (또는 Claude 에게 시켜서) 1줄 확인 :
+!bun --version   ← 버전 출력되면 OK
+```
+
+`bun: command not found` 가 뜨면 → STEP 1-1 의 Bun PATH 절차로 복귀.
+
+### 5-2. 설치 실행
+
+현재 세션에서 직접 실행 :
 
 ```
 /plugin marketplace add anthropics/claude-plugins-official
@@ -212,498 +388,451 @@ claude --version       # v2.1.80+ 필수
 /reload-plugins
 ```
 
-→ `/discord:configure`, `/discord:access` 슬래시 명령이 활성화됨
+(이미 마켓 등록되어 있으면 `/plugin marketplace update claude-plugins-official` 로 갱신)
 
-⚠️ 마켓 미등록 에러 시: `marketplace add` 부터 다시 실행
+→ `/discord:configure`, `/discord:access` 슬래시 명령 활성화.
 
-```
-완료 (y) / 막힘 (m)
-```
-
-### STEP 1.6 · 토큰 구성 (사용자 + 자동 · 1분)
-
-같은 Claude Code 세션에서:
-
-```
-/discord:configure <STEP 1.2 에서 복사한 토큰>
-```
-
-→ `~/.claude/channels/discord/.env` 에 자동 저장
-→ Channels 가 토큰 관리 (사용자가 .env 직접 편집 안 함)
-
-⚠️ 토큰을 노출하지 않도록 슬래시 명령 입력 시 주의 (히스토리·녹화에 노출 위험)
-
-```
-완료 (y)
-```
-
-### STEP 1.7 · 채널 활성화 모드로 재시작 (사용자 · 2분)
-
-```
-⚠️ 중요: 현재 Claude Code 세션 종료 → 새 터미널 열기
-
-새 터미널에서:
-
-  cd "<YOUR_PROJECT_ROOT>"
-  claude --channels plugin:discord@claude-plugins-official
-
-→ Bot 이 Discord 에서 Online 으로 표시
-→ Claude Code 세션이 메시지 수신 대기 상태
-
-💡 Tip: 본 스킬을 실행 중인 세션은 일반 claude 모드. Channels 세션은 별 터미널 윈도우에서 가동.
-
-새 터미널에서 시작 완료 (y) / 막힘 (m)
-```
-
-📸 캡처 포인트: 새 터미널의 `Channels enabled: discord` 메시지 + Discord 회원 목록 봇 Online
-
-### STEP 1.8 · 페어링 (사용자 · 3분)
-
-Channels 세션이 떠 있는 상태에서:
-
-```
-① Discord 앱 (PC 또는 폰) 에서 회원 목록의 봇 우클릭/탭 → Send Message (DM)
-② "hi" 또는 아무 메시지 전송
-③ 봇이 페어링 코드로 회신 (예: ABCD-1234)
-   ⚠️ 응답 없으면: Channels 세션 (--channels) 살아있는지 + Message Content Intent ON 확인
-
-④ Channels 세션 (새 터미널) 으로 돌아가서:
-
-  /discord:access pair ABCD-1234
-
-→ 본인 Discord 계정이 자동 허용목록에 추가
-
-⑤ 허용목록 잠그기 (보안):
-
-  /discord:access policy allowlist
-
-→ 페어링 안 된 사람의 메시지는 자동 폐기
-
-페어링 완료 (y) / 막힘 (m)
-```
-
-📸 캡처 포인트: 페어링 코드 회신 DM + Claude Code 의 pair 명령 출력
-
----
-
-## ✅ STEP 2 · 정상 작동 검증 (5분)
-
-### STEP 2.1 · Bot Online 확인 (사용자 · 30초)
-
-폰 또는 PC Discord 앱:
-- 본인 Discord 서버 → 우측 회원 목록 → 봇이 **Online (녹색 점)** 으로 표시되는지
-
-📸 캡처: Discord 회원 목록 Online 상태
-
-### STEP 2.2 · 폰 DM 양방향 검증 (사용자 + Claude · 2분)
-
-폰 Discord 앱:
-```
-1. 봇에게 DM
-2. 다음 입력:
-
-  지금 작업 중인 디렉토리 뭐야?
-
-→ Channels 세션이 메시지 수신
-→ Claude 가 cwd 분석 + ls 도구 호출
-→ reply 도구로 폰 DM 답신
-```
-
-성공 조건:
-- 10~30초 이내 답신 도착
-- 답신에 cwd 경로 또는 디렉토리 구조 포함
-- 새 터미널 (Channels 세션) 에 `<channel source="discord">` 이벤트 + reply 호출 로그 표시
-
-📸 캡처: 폰 DM 양방향 + 새 터미널의 reply 호출
-
-### STEP 2.3 · 도구 5개 시연 (사용자 + Claude · 2분)
-
-폰 DM 으로 다음 4가지 차례로 시험:
-
-```
-명령 1 (reply 검증) — 이미 STEP 2.2 에서 검증됨
-명령 2 (react)    : "이 메시지에 좋아요 이모지 붙여줘"
-   → Claude 가 add_reaction (또는 react) 도구 호출
-   → 본인이 보낸 메시지에 👍 이모지 자동 부착
-
-명령 3 (edit_message): "방금 답신 메시지 끝에 '검증 완료' 추가해줘"
-   → Claude 가 봇이 직전에 보낸 reply 메시지 편집
-   → 편집됨 표시 (edited) 와 함께 텍스트 갱신
-
-명령 4 (fetch_messages): "이 DM 의 최근 10개 메시지 요약해줘"
-   → Claude 가 fetch_messages 호출 (최대 100개 조회 가능)
-   → 메시지 요약 답신
-```
-
-성공 시 STEP 2 완료. 5개 도구 중 4개 (reply·react·edit·fetch) 검증. `download_attachment` 는 STEP 4 에서 첨부 파일 다룰 때 시연.
-
----
-
-## 📋 STEP 3 · 작업 가능 업무 표
-
-### STEP 3.1 · 노출 도구 5개
-
-| 도구 | 기능 | 제약 |
-|---|---|---|
-| `reply` | 채널 또는 DM 메시지 전송 (text + 선택적 reply_to + 파일) | 첨부 ≤10개, 각 ≤25MB |
-| `react` | 메시지에 이모지 반응 (`👍` 또는 `<:name:id>`) | — |
-| `edit_message` | 봇이 보낸 메시지 편집 (진행 상황 업데이트용) | 봇 본인 메시지만 가능 |
-| `fetch_messages` | 채널 최근 메시지 조회 (시간순) | 최대 100개, Discord 검색 API 미지원 |
-| `download_attachment` | 메시지 첨부 파일 다운로드 | `~/.claude/channels/discord/inbox/` 에 저장. 자동 다운로드 X |
-
-### STEP 3.2 · 마케터 시나리오 8개
-
-| # | 시나리오 | 사용 도구 | 트리거 |
-|---|---|---|---|
-| 1 | 출장 중 폰에서 "지난 광고 어땠어?" 질의 | `reply` | DM |
-| 2 | 봇이 보낸 진행 상황 메시지 5초마다 갱신 | `edit_message` | 자동 |
-| 3 | 사용자가 보낸 메시지에 ✅ 처리 완료 표시 | `react` | 자동 |
-| 4 | 최근 #cs-inbox 100개 메시지 요약 | `fetch_messages` + `reply` | DM |
-| 5 | 첨부된 PDF 분석 → 요약 답신 | `download_attachment` + `reply` | DM |
-| 6 | 외부 webhook → Claude 가 자동 디버그 (CI 실패 등) | `reply` | 이벤트 |
-| 7 | 폰에서 코드 명령 → 도구 사용 권한 채널 통해 승인 | 권한 릴레이 | DM |
-| 8 | iMessage·Telegram 도 같이 띄워서 멀티 채널 운영 | `--channels` 멀티 | 통합 |
-
-### STEP 3.3 · 다른 MCP 결합 패턴
-
-| 결합 | 활용 시나리오 |
-|---|---|
-| **+ Gmail MCP** (Claude.ai 통합) | 폰 DM "어제 CS 메일" → search_threads → 분류 → reply |
-| **+ Google Calendar MCP** | 폰 DM "오늘 일정" → list_events → reply |
-| **+ Google Sheets MCP** | 폰 DM "광고 시트 분석" → read_sheet → 인사이트 → reply |
-| **+ GA4 MCP** | 폰 DM "어제 트래픽" → run_report → reply |
-| **+ Meta·Google Ads MCP** | 폰 DM "ROAS 어떤 캠페인 좋아?" → get_insights → reply |
-| **+ Notion MCP** | 폰 DM "이 답변 노션에 저장" → notion-create-page → reply 확인 |
-
-### STEP 3.4 · 한계 4가지
-
-| # | 한계 | 우회 방법 |
-|---|---|---|
-| 1 | **세션 의존** · `--channels` 활성 세션이 떠 있을 때만 작동 | STEP 4.5 호스팅 옵션 표 참조 |
-| 2 | **메시지 검색 미지원** · `fetch_messages` 최대 100개 (시간순) | 100개 이상 분석은 외부 도구 또는 Discord 자체 검색 후 ID 전달 |
-| 3 | **무인 cron 발송 불가** · `reply` 는 메시지 수신 후에만 호출 가능 | 단순 알림은 Discord Webhook (`curl -X POST $WEBHOOK_URL`) |
-| 4 | **채널/역할 자동 생성 불가** · 5개 도구만 노출 | 채널 구조는 사용자가 수동으로 만들기 |
-
-### STEP 3.5 · 부가 기능 4가지 (공식 문서에서 추가 발견 · 마케터 가치)
-
-| # | 기능 | 역할 | 마케터 활용 시나리오 |
-|---|---|---|---|
-| 1 | **권한 릴레이** (`relay-permission-prompts`) | Claude 가 도구 사용 권한 필요 시 채널 통해 폰으로 승인 요청 푸시 | 폰 DM "광고 예산 200만원 늘려" → Claude 가 Meta Ads 도구 호출 직전 폰에 ✅ 승인 요청 → 본인 ✅ 누르면 실행 |
-| 2 | **멀티 채널** (`--channels` 에 공백 나열) | 한 세션이 Discord + Telegram + iMessage 동시 수신 | `claude --channels plugin:discord@... plugin:telegram@...` · 본인이 메신저 여러 개 쓸 때 통합 |
-| 3 | **access 정책 3가지** | `pairing`·`allowlist`·`groups` 로 발신자 권한 분리 | • `allowlist` (본인만) — 기본 권장<br>• `groups` (팀 멤버 + 가족) — 팀 마케팅 운영<br>• `pairing` (오픈 페어링) — 초대형 봇 |
-| 4 | **`--dangerously-skip-permissions`** | 권한 프롬프트 모두 우회 (무인 자동화용) | ⚠️ 신뢰 환경 + 폐쇄 네트워크에서만. 잘못 쓰면 Claude 가 사용자 확인 없이 광고비 변경 가능 |
-
-⚠️ **부가 기능 안전 가이드**:
-- 권한 릴레이는 신뢰하는 발신자만 허용목록 (`allowlist`) 에 추가. 페어링된 사람이 도구 권한 결정함.
-- 멀티 채널 사용 시 토큰·.env 위치 분리 확인 (`~/.claude/channels/discord/.env` · `~/.claude/channels/telegram/.env`)
-- `--dangerously-skip-permissions` 는 cron 자동화 외에는 쓰지 말기. 광고 예산·콘텐츠 발행 같은 위험 작업은 권한 릴레이 사용 권장.
-
----
-
-## 🔗 STEP 4 · Gmail + Google Calendar 결합 실습 (10~15분)
-
-### STEP 4.1 · 사전 점검 (자동 30초)
-
-Claude 가 다음 도구 prefix 가 노출돼 있는지 확인:
-
-```
-mcp__claude_ai_Gmail__* (search_threads, get_thread, create_draft, label_message, etc.)
-mcp__claude_ai_Google_Calendar__* (list_events, create_event, update_event, etc.)
-```
-
-⚠️ 없으면 Claude Desktop → Settings → Connectors → Gmail · Google Calendar 연결 필요 (사용자 OAuth · 약 2분)
-
-게이트:
-```
-Gmail/Calendar 통합 활성 상태 OK (y) / 활성화 필요 (m)
-```
-
-### STEP 4.2 · 시나리오 A · 오늘 일정 조회 (3분)
-
-**준비**: Channels 세션 (`claude --channels plugin:discord@...`) 가 떠 있어야 함
-
-폰 Discord 봇 DM:
-```
-오늘 일정 알려줘
-```
-
-기대 흐름:
-```
-1. Channels 가 메시지 수신
-2. Claude 가 mcp__claude_ai_Google_Calendar__list_events 호출
-   - calendarId: primary
-   - timeMin: today 00:00
-   - timeMax: today 23:59
-3. 일정 목록 정리 (시간순 · 위치·참석자 포함)
-4. reply 도구로 폰 DM 답신:
-
-  📅 오늘 일정 (3건)
-
-  09:00-10:00 · 마케팅 주간 미팅 (회의실 A)
-  14:00-15:00 · 광고 캠페인 검토 (Zoom)
-  16:30-17:30 · CS 응대 시간 (오피스)
-```
-
-성공 조건:
-- [ ] 1분 이내 답신
-- [ ] 일정 개수·시간·제목 정확
-- [ ] reply 텍스트 가독성 (이모지·줄바꿈)
-
-📸 캡처: 폰 DM (사용자 질의 + Claude 일정 답신)
-
-### STEP 4.3 · 시나리오 B · CS 메일 분류 (5분)
-
-폰 Discord 봇 DM:
-```
-지난 24시간 CS 라벨 메일 분류해줘
-```
-
-기대 흐름:
-```
-1. Channels 메시지 수신
-2. Claude 호출:
-   - mcp__claude_ai_Gmail__search_threads
-     query: "label:CS newer_than:1d"
-3. 결과 N개를 4 카테고리 분류:
-   🚨 긴급 (배송 분실·결제 오류·VIP 컴플레인)
-   💰 환불·교환
-   💬 일반 문의 (사이즈·재입고)
-   🚫 스팸
-4. 긴급 3건 본문 발췌 (제목·발신자·요지)
-5. reply 도구로 폰 DM 답신 (embed 형식 권장)
-```
-
-기대 답신 형식:
-```
-📧 CS 메일 N건 (지난 24h)
-
-🚨 긴급 3건 ─ 즉시 처리 권장
-  • [홍길동] 배송 후 3일째 못 받음 — 운송장 분실 가능성
-  • [김영희] 결제 2중 청구 — 환불 필요
-  • [VIP 박철수] 사이즈 교환 5회째 반복 — 응대 톤 점검
-
-💰 환불·교환 5건  → 일괄 처리 권장
-💬 일반 문의 8건  → FAQ 자동 응답 적합
-🚫 스팸 2건       → 라벨 처리됨
-```
-
-성공 조건:
-- [ ] 30초 이내 답신
-- [ ] 카테고리 합계 = 전체 메일 수
-- [ ] 긴급 정확도 ≥ 90%
-- [ ] 발신자 이름·요지 정확
-
-📸 캡처: 폰 DM 답신 (긴 메시지)
-
-### STEP 4.4 · 시나리오 C · 일정 추가 (3분)
-
-폰 Discord 봇 DM:
-```
-내일 14시에 광고 미팅 1시간 추가해줘. 참석자 본인만.
-```
-
-기대 흐름:
-```
-1. Channels 수신
-2. Claude 호출:
-   - mcp__claude_ai_Google_Calendar__create_event
-     calendarId: primary
-     summary: "광고 미팅"
-     start: 내일 14:00
-     end:   내일 15:00
-     attendees: [본인 이메일]
-3. 생성된 event 의 htmlLink 받기
-4. reply 답신:
-
-  ✅ 일정 추가 완료
-
-  📅 광고 미팅
-  🗓 2026-05-27 (수) 14:00-15:00
-  👤 참석자: your-email@example.com
-  🔗 https://calendar.google.com/event?eid=...
-
-  취소하려면 "취소" 라고 답신해주세요.
-```
-
-성공 조건:
-- [ ] 30초 이내 답신
-- [ ] Google Calendar 실제 일정 생성됨
-- [ ] htmlLink 클릭 시 이벤트 페이지 열림
-
-⚠️ 안전: 일정 생성 같은 쓰기 작업은 사용자 확인 게이트 권장. Claude Code 의 도구 권한 정책에서 `mcp__claude_ai_Google_Calendar__create_event` 권한 프롬프트가 채널 통해 사용자 폰으로 릴레이될 수 있음.
-
-📸 캡처: 폰 DM 답신 + Google Calendar 실제 일정 화면
-
-### STEP 4.5 · 호스팅 옵션 + 자동화 확장 안내 (3분)
-
-#### 🏠 STEP 4.5.1 · 호스팅 옵션 5종 (노트북 닫으면 종료 문제 해결)
-
-⚠️ **핵심 문제**: Channels 는 `--channels` 활성 세션이 떠 있어야 메시지 도착. **노트북 닫으면 sleep → 세션 종료 → DM 보내도 답신 없음.**
-
-| # | 옵션 | 1회 비용 | 월 비용 | 복잡도 | 적합 마케터 |
-|---|---|---|---|---|---|
-| 1 | **`caffeinate -dis`** (노트북 깨어있게) | 0 | 0 (외부 전원 필요) | ⭐ | 임시·테스트·간헐 사용 |
-| 2 | **데스크톱 PC 24시간** + caffeinate | 0 (있다면) | 전기료 5~10$ | ⭐ | 책상에 PC 있는 사람 ⭐ 권장 1 |
-| 3 | **Mac mini 홈 서버** | 600~1,400$ | 전기료 2~5$ | ⭐⭐ | 본격 운영 ⭐ 권장 2 |
-| 4 | **Raspberry Pi 5 (Linux + Claude Code)** | 80~150$ | 전기료 1$ | ⭐⭐⭐ | 기술 관심 있는 사람 (Bun + claude.ai 로그인 까다로움) |
-| 5 | **Linux VPS** (DigitalOcean·Hetzner 등) | 0 | 6~12$ | ⭐⭐⭐⭐ | 진입장벽 큼 — claude.ai OAuth 가 VPS 브라우저 없이 어려움 |
-
-#### 💻 권장 1 · 노트북·데스크톱 macOS 에서 caffeinate (가장 간단)
-
-`claude --channels` 세션 시작 전 또는 별 터미널에서:
-
-```bash
-# 옵션 A · 가장 강력 (모니터·아이들·시스템 sleep 모두 방지)
-caffeinate -dis &
-
-# 옵션 B · 노트북 닫아도 작동 (외부 전원 필수)
-caffeinate -dis -t 28800 &   # 8시간 (-t 초 단위)
-
-# Channels 세션 시작
-cd "$YOUR_PROJECT_ROOT"
-claude --channels plugin:discord@claude-plugins-official
-```
-
-⚠️ 노트북 닫기 + caffeinate 사용 시 주의:
-- **외부 전원 연결 필수** (배터리만으로는 5분 후 강제 sleep)
-- 발열 주의 (가방 안 노트북 절대 금지)
-- 환기 잘 되는 곳에 거치
-- 종료는 `pkill caffeinate` 또는 터미널 종료
-
-#### 🖥 권장 2 · Mac mini 홈 서버 + launchd 상시 가동
-
-장기 운영에 가장 안정적. launchd plist 골격:
-
-```xml
-<!-- ~/Library/LaunchAgents/com.example.claude-discord-channels.plist -->
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>com.example.claude-discord-channels</string>
-
-    <key>ProgramArguments</key>
-    <array>
-        <string>/opt/homebrew/bin/claude</string>
-        <string>--channels</string>
-        <string>plugin:discord@claude-plugins-official</string>
-    </array>
-
-    <key>WorkingDirectory</key>
-    <string>/Users/YOUR_USERNAME/YOUR_PROJECT</string>
-
-    <key>RunAtLoad</key>  <true/>
-    <key>KeepAlive</key>  <true/>
-
-    <key>StandardOutPath</key>
-    <string>/tmp/discord-channels.out.log</string>
-    <key>StandardErrorPath</key>
-    <string>/tmp/discord-channels.err.log</string>
-
-    <key>EnvironmentVariables</key>
-    <dict>
-        <key>PATH</key>
-        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
-    </dict>
-</dict>
-</plist>
-```
-
-활성화 명령:
-```bash
-launchctl load ~/Library/LaunchAgents/com.example.claude-discord-channels.plist
-launchctl start com.example.claude-discord-channels
-
-# 상태 확인
-launchctl list | grep discord-channels
-
-# 종료
-launchctl unload ~/Library/LaunchAgents/com.example.claude-discord-channels.plist
-```
-
-⚠️ launchd 로 띄운 세션은 백그라운드라 stdin 입력 불가. 폰 DM 통해서만 상호작용.
-
-#### 🎉 STEP 4.5.2 · 본 스킬 마무리
-
-```
-Channels + Gmail + Calendar + 호스팅 옵션 + 부가 기능 모두 정리 완료.
-
-이걸 더 강력하게:
-
-  A. 무인 cron 알림 (Discord Webhook · Channels 와 별개):
-     크론에서 curl -X POST $WEBHOOK_URL
-     → 매주 월요일 09:00 광고 리포트 자동 발송
-     → reply 와 달리 세션 의존 없음 (PC 꺼져 있어도 OK)
-
-  B. 멀티 채널 (Telegram + iMessage):
-     claude --channels plugin:discord@... plugin:telegram@...
-     → 한 세션이 여러 채널 동시 수신
-
-  C. 권한 릴레이 활성화 (광고 예산 변경 같은 위험 작업 대비):
-     도구 권한 프롬프트가 폰 DM 으로 푸시되어 ✅/❌ 클릭으로 승인
-
-본 스킬 끝. Part 10 AX 시스템에서 더 깊은 활용:
-  - cs-responder · 메일 도착 즉시 자동 응답 + 분류 후 디스코드 통보
-  - daily-briefing · 매일 09시 자동 브리핑 (Calendar + Gmail + 광고)
-```
-
----
-
-## 트러블슈팅 (공식 Channels 노선 한정)
+### 5-3. 설치 실패 시 (윈도우에서 가장 자주 발생)
 
 | 증상 | 원인 | 해결 |
 |---|---|---|
-| `/plugin install` 실패 | 마켓플레이스 미등록 | `/plugin marketplace add anthropics/claude-plugins-official` 먼저 |
-| `Bun: command not found` | Bun 미설치 | `curl -fsSL https://bun.sh/install \| bash` |
-| 봇 Offline 표시 | `--channels` 플래그 누락 또는 Channels 세션 종료됨 | 새 터미널 + `claude --channels plugin:discord@claude-plugins-official` |
-| 페어링 코드 안 옴 | Channels 세션 꺼져 있거나 Message Content Intent OFF | STEP 1.3 + STEP 1.7 재확인 |
-| `Channels disabled` 시작 경고 | Team/Enterprise 인데 관리자 미활성화 | claude.ai Admin → Claude Code → Channels 활성화 (Pro/Max 는 무관) |
-| `Plugin not in allowed list` | 조직이 `allowedChannelPlugins` 제한 설정 | 관리자에게 `discord@claude-plugins-official` 추가 요청 |
-| reply 텍스트 안 보임 | 답신은 Discord 에 도착 (터미널엔 도구 호출만 표시) | 폰/PC Discord 앱에서 확인 |
-| 권한 프롬프트 응답 없이 일시중지 | 도구 권한 확인 대기 | 채널 권한 릴레이로 폰 승인 또는 `--dangerously-skip-permissions` (신뢰 환경만) |
-| 첨부 25MB 초과 발송 실패 | 공식 제한 | 파일 분할 또는 Google Drive 링크 첨부 |
-| fetch_messages 100개 이상 못 가져옴 | Discord 검색 API 미지원 | 100개씩 페이지네이션 또는 별 도구 |
+| `marketplace not found` | 마켓 추가 순서 누락 | `/plugin marketplace add` 를 먼저, 그 다음 install |
+| 진행률 멈춤 (3분+) | OneDrive 가 plugin 폴더 동기화 중 | STEP 0.5-3 OneDrive 백업 해제 후 재실행 |
+| `bun: command not found` | Claude 서브프로세스가 Bun 못 찾음 | 5-1 의 `!bun --version` 확인 → 1-1 의 PATH 절차 |
+| `ENOTFOUND github.com` / SSL 오류 | 회사 프록시·SSL 검사 | `git config --global http.sslVerify false` (임시) 또는 사내 네트워크 외 환경 |
+| 무한 "Installing..." 로 멈춤 | Defender 가 plugin 다운로드 파일 스캔 | STEP 0.5-2 Defender 예외 등록 후 재실행 |
+| 설치는 됐는데 슬래시 명령 안 보임 | `/reload-plugins` 누락 | `/reload-plugins` 실행 또는 Claude Code 재시작 |
+| `Authentication required` | claude.ai 로그아웃 상태 | `claude login` 으로 OAuth 재로그인 |
+| 한국어 사용자명에서 풀림 | Long Path 미설정 | STEP 0.5-2 `LongPathsEnabled` |
 
-## 사전 검증된 설정값
+### 5-4. 강제 재설치 (위 표로 안 풀릴 때 · 1분)
 
-| 항목 | 값 |
+```
+# Claude Code 안에서 :
+/plugin uninstall discord@claude-plugins-official
+/plugin marketplace remove claude-plugins-official
+
+# 외부 셸 (PowerShell) — 캐시 청소 :
+#   macOS / Linux
+rm -rf ~/.claude/plugins/cache
+#   Windows
+Remove-Item -Recurse -Force "$env:USERPROFILE\.claude\plugins\cache" -ErrorAction SilentlyContinue
+
+# Claude Code 재시작 후 다시 :
+/plugin marketplace add anthropics/claude-plugins-official
+/plugin install discord@claude-plugins-official
+/reload-plugins
+```
+
+### STEP 5 종료 게이트
+```
+질문 · /plugin install 출력에 "Installed" 같은 성공 메시지 보였나요?
+       그리고 /discord:configure 입력 시 자동완성에 명령이 보이나요?
+
+답변 (y / n / error) :
+```
+
+`n` 또는 `error` → 5-3 표 확인 → 5-4 강제 재설치 → 그래도 안 되면 트러블슈팅 표 (페이지 하단) 참조.
+
+---
+
+## STEP 6 · Bot 토큰 등록 (사용자 30초)
+
+```
+/discord:configure <STEP 2 에서 복사한 토큰>
+```
+
+저장 위치 :
+
+| OS | 경로 |
 |---|---|
-| 플러그인 패키지 | `discord@claude-plugins-official` |
-| 출처 | https://github.com/anthropics/claude-plugins-official/tree/main/external_plugins/discord |
-| 런타임 | Bun 1.0+ |
-| Claude Code 최소 | v2.1.80 |
-| 인증 요구 | claude.ai 로그인 (API Key 인증 불가) |
-| Intent 필요 | Message Content Intent 만 (1개) |
-| OAuth Scope | `bot` 만 (1개) |
-| Bot Permissions (6개) | View Channels · Send Messages · Send Messages in Threads · Read Message History · Attach Files · Add Reactions |
-| 토큰 저장 위치 | `~/.claude/channels/discord/.env` (자동 관리) |
-| 페어링 정책 기본 | `pairing` (누구나 페어링 코드 받을 수 있음) |
-| 페어링 정책 권장 | `allowlist` (`/discord:access policy allowlist`) |
-| 노출 도구 | 5개 (`reply`·`react`·`edit_message`·`fetch_messages`·`download_attachment`) |
-| 첨부 한도 | 메시지당 ≤10개, 각 ≤25MB |
-| 메시지 조회 한도 | 최대 100개 (Discord 검색 API 미지원) |
-| 다중 인스턴스 환경변수 | `DISCORD_STATE_DIR` (상태 디렉토리 분리) |
-| 다른 채널 플러그인 | `telegram@claude-plugins-official` · `imessage@claude-plugins-official` · `fakechat@claude-plugins-official` (멀티 가능) |
+| **macOS / Linux** | `~/.claude/channels/discord/.env` |
+| **Windows** | `%USERPROFILE%\.claude\channels\discord\.env` |
 
-## 보안 가이드
+⚠️ 토큰 입력 시 화면 녹화·터미널 히스토리 노출 주의.
 
-- **Bot Token 은 `~/.claude/channels/discord/.env` 에만 저장**. git commit 절대 금지 (`.gitignore` 에 등록 확인).
-- `--channels` 플래그가 활성화된 세션에서는 페어링된 발신자가 도구 권한도 결정할 수 있음. 신뢰하는 본인 계정만 허용목록 (`/discord:access policy allowlist`) 에 추가.
-- 토큰 노출 시 Developer Portal → Bot → Reset Token 으로 재발급 + `/discord:configure` 재실행.
-- 광고 예산·콘텐츠 발행 같은 위험 작업은 권한 릴레이로 폰 원격 승인 권장. `--dangerously-skip-permissions` 는 신뢰 환경 무인 자동화 외 비추.
+게이트 :
+```
+질문 · .env 저장 메시지 보였나요?
 
-## 다음 단계 (스킬 종료 후 활용)
+답변 (y / n) :
+```
 
-- **무인 cron 알림** : Discord Webhook (`curl -X POST $WEBHOOK_URL`) — Channels 세션 의존 없이 정기 알림
-- **상시 가동** : STEP 4.5 호스팅 옵션 표 (caffeinate / Mac mini / launchd plist)
-- **멀티 채널** : `--channels plugin:discord@... plugin:telegram@...` — Discord + Telegram + iMessage 동시 운영
-- **Gmail/Calendar 외 다른 MCP 결합** : Google Sheets · GA4 · Meta Ads · Notion 등 사용자의 워크플로에 맞게 확장
+---
 
-## 관련 자료
+## STEP 7 · --channels 모드로 Claude Code 재시작 (가장 중요)
 
-- [Claude Code Channels 공식 문서 (ko)](https://code.claude.com/docs/ko/channels)
-- [Discord 플러그인 공식 README](https://github.com/anthropics/claude-plugins-official/blob/main/external_plugins/discord/README.md)
-- [Telegram 플러그인](https://github.com/anthropics/claude-plugins-official/tree/main/external_plugins/telegram)
-- [iMessage 플러그인](https://github.com/anthropics/claude-plugins-official/tree/main/external_plugins/imessage)
-- [fakechat 데모 채널 (로컬 테스트용)](https://github.com/anthropics/claude-plugins-official/tree/main/external_plugins/fakechat)
+⚠️ **이 단계가 없으면 봇이 응답하지 않습니다.**
+
+```
+1. 현재 Claude Code 세션 종료 (Ctrl + C 또는 'exit')
+2. 새 터미널 열기
+3. 작업 디렉토리로 이동
+4. 다음 명령 실행 :
+
+   claude --channels plugin:discord@claude-plugins-official
+```
+
+명령은 OS 공통 (단 PATH 에 `claude` 등록 필요).
+멀티 채널 : `claude --channels plugin:discord@... plugin:telegram@...`
+
+성공 시 :
+- Discord 멤버 리스트에서 봇이 🟢 온라인
+- 터미널에 `Channels enabled: discord` 출력
+
+게이트 :
+```
+질문 · Discord 에서 봇 온라인 (초록 점) 으로 보이나요?
+
+답변 (y / n) :
+```
+
+`n` → 트러블슈팅 표 참조 (페이지 하단).
+
+---
+
+## STEP 8 · 봇 페어링 + 허용목록 잠금 (보안)
+
+### 8-1. 봇에게 DM
+```
+Discord 앱 (폰 또는 PC) :
+  1. 본인 서버 멤버 리스트 → 봇 클릭
+  2. 'Message' / '메시지 보내기'
+  3. 아무 텍스트 입력 (예: 'hi')
+
+봇이 즉시 페어링 코드로 회신 (예: 'ABCD-1234')
+⚠️ 응답 없으면: Channels 세션 살아있는지 + Intent ON 재확인
+```
+
+### 8-2. 페어링
+```
+/discord:access pair ABCD-1234
+```
+→ 본인 Discord 계정 허용목록에 자동 추가.
+
+### 8-3. 허용목록 잠그기 ⭐
+```
+/discord:access policy allowlist
+```
+→ 페어링 안 된 사람의 메시지 자동 폐기.
+
+게이트 :
+```
+질문 · 페어링 + policy allowlist 모두 성공했나요?
+
+답변 (y / n) :
+```
+
+---
+
+## STEP 9 · 폰 DM 양방향 검증 (최종)
+
+```
+📱 폰 Discord 앱 :
+  1. 본인 서버 → 봇 → DM 열기
+  2. 메시지:  "지금 작업 중인 디렉토리 알려줘"
+  3. 30초 안에 봇이 답변하는지 확인
+```
+
+PC 의 Channels 세션 :
+- `<channel source="discord" chat_id="..." user="...">` 이벤트 도착
+- Claude 가 도구 호출 + reply
+- 터미널에는 도구 호출과 "전송됨" 만 (실제 답신은 Discord 앱에)
+
+게이트 :
+```
+질문 · 폰 Discord 에서 봇 답변 받았나요?
+
+답변 (y / n) :
+```
+
+`y` → 🎉 **Discord ↔ Claude 양방향 연동 완료**. STEP 10 진행.
+
+---
+
+# 🔗 STEP 10 · Gmail + Calendar Connector 연동 (5단계 · 3~5분)
+
+Discord 만으로는 "오늘 일정", "어제 메일" 같은 일상 질의를 못 받음. Gmail + Calendar Connector 를 연결해야 양방향 어시스턴트가 완성.
+
+## 10-1. 헬스 체크 (자동 30초)
+
+Claude 가 현재 세션에서 도구 prefix 노출 여부 확인 :
+
+```
+필요 prefix:
+  mcp__claude_ai_Gmail__*           (search_threads · create_draft · label_message · ...)
+  mcp__claude_ai_Google_Calendar__* (list_events · create_event · ...)
+```
+
+게이트 :
+```
+- Gmail 통합            : ✅ / ❌
+- Google Calendar 통합  : ✅ / ❌
+
+둘 다 ✅ → 10-4 (활성 검증) 로 점프 (y)
+하나라도 ❌ → 10-2 진행 (n)
+```
+
+## 10-2. Gmail Connector 연결 (사용자 1분)
+
+```
+브라우저:
+  ① URL 직접: https://claude.ai/settings/connectors
+  ② 메뉴: claude.ai → 우측 상단 아바타 → Settings → Connectors
+
+순서:
+  1. 'Gmail' 카드 → 'Connect'
+  2. Google 계정 선택 (마케팅용 계정 권장)
+  3. 권한 동의:
+     ✅ Gmail 메시지 읽기
+     ✅ 라벨 보기 및 관리
+     ✅ 임시 보관함 (Draft) 작성
+     ⚠️ '메일 발송' 권한은 선택 (자동 답신 쓰려면 ON · 분석만이면 OFF 안전)
+  4. 'Allow' → 'Connected' 표시
+```
+
+게이트 :
+```
+질문 · Gmail Connector 가 'Connected' 표시되나요?
+
+답변 (y / n / scope-error) :
+```
+
+`scope-error` → Workspace (회사) 의 third-party app 차단. 개인 Gmail 로 재시도 또는 관리자에게 Anthropic 화이트리스트 요청.
+
+## 10-3. Google Calendar Connector 연결 (사용자 1분)
+
+같은 페이지에서 :
+```
+  1. 'Google Calendar' 카드 → 'Connect'
+  2. Google 계정 선택 (Gmail 과 같은 계정 권장)
+  3. 권한 동의:
+     ✅ 캘린더 목록 보기
+     ✅ 일정 보기·생성·수정·삭제 (primary 캘린더)
+     ⚠️ 공유 캘린더 (부서·팀) 는 OAuth 기본 scope 밖 → 필요 시 ID 직접 사용
+  4. 'Allow' → 'Connected'
+```
+
+게이트 :
+```
+질문 · Calendar Connector 'Connected' 표시되나요?
+
+답변 (y / n / scope-error) :
+```
+
+## 10-4. 활성 검증 (사용자 + 자동 · 1분)
+
+⚠️ Connector 변경 후 Claude Code 세션 재시작 필요할 수 있음.
+
+```
+1. 현재 세션 종료 (Ctrl + C)
+2. 새 터미널 (Channels 활성 유지):
+
+   claude --channels plugin:discord@claude-plugins-official
+
+3. Claude 에게:
+   "오늘 받은 메일 3개만 보여줘"
+   → mcp__claude_ai_Gmail__search_threads 호출 + 메일 3건 표시
+
+4. 이어서:
+   "오늘 일정 알려줘"
+   → mcp__claude_ai_Google_Calendar__list_events 호출 + 일정 표시
+```
+
+게이트 :
+```
+질문 · 두 명령 모두 정상 응답?
+
+답변 (y / n) :
+```
+
+## 10-5. 자주 막히는 곳
+
+| 증상 | 원인 | 해결 |
+|---|---|---|
+| 'Connect' 권한 거부 화면 | Workspace third-party app 차단 | 개인 Gmail 재연결 또는 관리자 화이트리스트 |
+| 'Connected' 인데 prefix 노출 X | 세션 캐시 | Ctrl+C → `claude --channels ...` 재시작 |
+| 한국어 라벨 (`고객문의`) 검색 실패 | system label vs 사용자 라벨 매칭 차이 | 라벨 영문화 (`CS`·`VIP`) 또는 라벨 ID 사용 |
+| 일정 생성됐는데 캘린더에 없음 | 다른 캘린더에 생성됨 | `calendarId: primary` 명시 |
+| 공유 캘린더 안 보임 | OAuth 기본 scope 외 | Calendar 설정에서 ID 복사 → 명령에 전달 |
+| 'Send email' 권한 거부 | 발송 스코프 미동의 | Connectors → Gmail → Reconnect, 발송 권한 ON |
+| 회사 메일 (Outlook · Naver) 연동 안 됨 | Anthropic Connector 는 Google 만 | Gmail 으로 포워딩 또는 IMAP 별 MCP |
+
+### STEP 10 종료 게이트
+```
+🎉 Gmail + Calendar 연동 완료.
+
+이제 폰 DM 으로 메일 분류·일정 조회·일정 추가 모두 가능.
+
+STEP 11 (다른 MCP 결합 안내) 진행할까요? (y / n)
+```
+
+---
+
+# 🔌 STEP 11 · 마케팅 MCP 10종을 Discord 에서 함께 사용
+
+⭐ **별도 "연결" 절차 없음**. 이미 설치된 MCP 는 `--channels` 세션에 **자동 노출**됨. 폰 DM 한 줄로 어떤 MCP 든 호출 가능.
+
+## 11-1. 결합 가능한 MCP 10종 (강의 폴더 기준)
+
+| # | 폴더 | MCP | 폰 DM 활용 예시 |
+|---|---|---|---|
+| 1 | `01-google-sheets` | google-sheets | "어제 매출 시트 핵심 3가지 알려줘" |
+| 2 | `02-ga4` | ga4 | "어제 트래픽·전환·이탈률 알려줘" |
+| 3 | `03-firecrawl` | firecrawl | "이 경쟁사 사이트 크롤링해서 신상품 알려줘" |
+| 4 | `04-figma` | figma (자체호스팅) | "지금 띄운 Figma 페이지 카드뉴스 톤 일관성 점검" |
+| 5 | `05-youtube-data` | youtube-data + analytics | "지난주 유튜브 채널 KPI 요약해줘" |
+| 6 | `06-higgsfield` | higgsfield | "오늘 광고 이미지 1장 생성" |
+| 7 | `07-영상제작` | Hyperframes + HeyGen + ElevenLabs | "이 슬라이드 영상 콘티 짜줘" |
+| 8 | `08-buffer` | buffer | "이 글 5채널 (인스타·X·LinkedIn·페북·스레드) 예약" |
+| 9 | `09-ads` | meta-ads + google-ads | "어제 3매체 ROAS 통합 알려줘" |
+| 10 | `10-notion` | notion | "이 답변 노션 콘텐츠 캘린더에 저장" |
+
+## 11-2. 자동 헬스 체크 (어떤 MCP 가 이미 활성?)
+
+Claude 가 현재 세션에서 prefix 노출 여부 자동 확인 :
+
+| MCP | 필요 prefix | 활성 여부 |
+|---|---|---|
+| google-sheets | `mcp__google-sheets__*` 또는 `mcp__google_sheets__*` | ✅ / ❌ |
+| ga4 | `mcp__ga4__*` | ✅ / ❌ |
+| firecrawl | `mcp__firecrawl__*` | ✅ / ❌ |
+| figma | `mcp__claude_ai_Figma__*` 또는 `mcp__figma__*` | ✅ / ❌ |
+| youtube-data | `mcp__youtube-data__*` | ✅ / ❌ |
+| higgsfield | `mcp__claude_ai_Higgsfield__*` | ✅ / ❌ |
+| 영상제작 | Hyperframes (로컬) + HeyGen API + ElevenLabs API | ✅ / ❌ |
+| buffer | `mcp__buffer__*` | ✅ / ❌ |
+| meta+google-ads | `mcp__meta-ads__*` · `mcp__google-ads__*` | ✅ / ❌ |
+| notion | `mcp__claude_ai_Notion__*` | ✅ / ❌ |
+
+게이트 :
+```
+헬스 체크 결과:
+  활성   : N 개
+  미설치 : M 개
+
+미설치된 MCP 추가하시려면 STEP 11-3, 결합 예시 보려면 11-4, 종료는 stop.
+
+답변 (3 / 4 / stop) :
+```
+
+## 11-3. 미설치 MCP 추가 (필요 시)
+
+미설치된 MCP 가 있다면 별도 스킬을 호출 :
+
+| 상황 | 호출할 스킬 |
+|---|---|
+| 1개 추가 | **`mcp설치` (개별)** — "X MCP 설치하자" 발화 |
+| 한 번에 다 | **`mcp설치-전체` (마스터)** — "MCP 전체 설치하자" 발화 |
+| 영상 트리오만 | **`mcp설치-영상제작`** — "영상제작 MCP 설치하자" |
+| 유튜브만 | **`mcp설치-youtube`** — "유튜브 mcp 시작하자" |
+
+설치 완료 후 :
+```
+1. 새 .mcp.json 적용 위해 Channels 세션 재시작:
+   Ctrl+C → claude --channels plugin:discord@claude-plugins-official
+2. 폰 DM 으로 해당 MCP 활용 테스트
+```
+
+## 11-4. 결합 예시 5개 (폰 DM 한 줄)
+
+| # | 폰 DM | 호출되는 MCP | 흐름 |
+|---|---|---|---|
+| 1 | "어제 광고 ROAS + 매출 시트 비교해줘" | google-sheets + meta-ads + google-ads | 시트 read + 광고 insights → reply |
+| 2 | "이 PDF 분석 후 노션에 저장" (첨부 포함) | download_attachment + notion | 첨부 다운 → 요약 → notion-create-page → reply |
+| 3 | "오늘 일정 + 어제 트래픽" | calendar + ga4 | list_events + run_report → reply |
+| 4 | "유튜브 채널 KPI 보고서 만들고 매주 월요일 09시 자동 발송" | youtube + ga4 + 노션 + Webhook cron | 보고서 1회 작성 → cron 등록 → 매주 자동 |
+| 5 | "이 경쟁사 사이트 크롤링 + 우리 광고 카피 비교" | firecrawl + ads | scrape + ads 카피 → 차이 분석 → reply |
+
+⚠️ 위험 작업 (광고 예산 변경·발송) 은 권한 릴레이로 폰 ✅ 승인 게이트 권장.
+
+### STEP 11 종료 게이트
+```
+🎉 연결 + 확장 완료 (STEP 0~11).
+   Discord ↔ Claude 양방향 + Gmail/Calendar + 마케팅 MCP 결합 가능 상태.
+
+────────────────────────────────
+
+⚠️ 그런데 아직 두 가지가 비어 있음:
+   ① "폰에서 뭐라고 말해야 되나요?" (사용자 매뉴얼)
+   ② "이 시스템이 진짜 한 흐름으로 작동해요?" (아키텍처 진단)
+
+   → 다음 스킬이 인벤토리 1회 스캔으로 두 문서를 동시에 박제합니다.
+
+다음 스킬 (필수 권장):
+  💬 "AI 비서 구축" 또는 "봇 운영 가이드" 라고 말하세요.
+
+  → ai-assistant-build 스킬이 :
+       ① 인벤토리 스캔 (28 에이전트 + 14 스킬 + 10 MCP + 봇 정보)
+       ② 오케스트레이터 카탈로그 검증 (라우팅 갭 검출)
+       ③ 자연어 라우팅 시뮬레이션 (발화 5개 + 확신도)
+       ④ agents/AI-비서-아키텍처.md 박제 (시스템 아키텍처)
+       ⑤ ~/.claude/channels/discord/OPERATIONS.md 박제 (사용자 매뉴얼)
+       ⑥ 폰에서 "운영 가이드 보여줘" → 봇이 운영 카드 응답
+       ⑦ (notion 활성 시) Notion 페이지 2개 미러링
+       ⑧ 첫 E2E 테스트 추천 (A: email-newsletter / B: daily-briefing / C: 광고)
+       소요: 약 15분.
+
+skip 하고 바로 첫 에이전트로 가려면:
+  "1-1 email-newsletter 실습 시작하자" 라고 말하세요.
+
+장기 운영 추가 (옵션):
+  - 매일 09시 자동 브리핑     → Part 10 daily-briefing (Webhook + cron)
+  - 광고 임계치 자동 점검     → Part 10 check-ads
+  - 주간 종합 리포트          → Part 10 weekly-report
+```
+
+---
+
+# 🛠 트러블슈팅
+
+| 증상 | 원인 | 해결 |
+|---|---|---|
+| `/plugin install` "marketplace not found" | 마켓플레이스 미등록 | `/plugin marketplace add anthropics/claude-plugins-official` 먼저 |
+| `bun: command not found` | Bun 미설치 / PATH 미반영 | 설치 후 새 터미널 (macOS: `source ~/.zshrc` · Windows: 새 PowerShell) |
+| 봇 Offline 표시 | `--channels` 플래그 누락 / 세션 종료 | 새 터미널 + `claude --channels plugin:discord@...` |
+| 페어링 코드 안 옴 | Channels 세션 꺼짐 또는 Intent OFF | STEP 3 + STEP 7 재확인 |
+| Bot 메시지 못 읽음 | Message Content Intent OFF | Developer Portal → Bot → Intent 토글 ON + Save |
+| "API Key 인증 작동 안 함" | claude.ai 로그인 아님 | `claude login` 으로 OAuth |
+| `Channels disabled` 경고 | Team/Enterprise 관리자 미활성화 | claude.ai Admin → Claude Code → Channels 활성화 |
+| 봇 온라인인데 답신 없음 | 페어링 안 됨 / allowlist 인데 본인 미등록 | `/discord:access list` 확인 → `/discord:access pair <코드>` 재실행 |
+| reply 텍스트 안 보임 | 답신은 Discord 도착 (터미널엔 도구 호출만) | 폰/PC Discord 앱에서 확인 |
+| 첨부 25MB 초과 | 공식 제한 | 파일 분할 또는 Google Drive 링크 |
+| `claude --version` < 2.1.80 | 구버전 | `npm i -g @anthropic-ai/claude-code@latest` |
+| Connector 추가했는데 도구 prefix 노출 X | 세션 캐시 | Ctrl+C → `claude --channels ...` 재시작 |
+
+### 윈도우 전용 트러블슈팅
+
+| 증상 | 원인 | 해결 |
+|---|---|---|
+| STEP 5 `/plugin install` 3~10분 멈춤 | OneDrive 가 `%USERPROFILE%\.claude` 동기화 | STEP 0.5-3 OneDrive 백업 해제 후 재실행 |
+| STEP 1 Bun 설치 중 CPU 100% · 매우 느림 | Defender 실시간 보호가 Bun 캐시 스캔 | STEP 0.5-2 `Add-MpPreference` 예외 등록 |
+| `irm bun.sh/install.ps1 \| iex` 거부 / 무반응 | PowerShell 실행 정책 Restricted | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` |
+| Bun 설치했는데 `bun --version` 실패 | PATH 미반영 또는 사용자 PATH 누락 | STEP 1-1 의 PATH 수동 추가 절차 (`[Environment]::SetEnvironmentVariable`) |
+| `bun` 은 되는데 Claude 가 못 찾음 | Claude 서브프로세스 PATH 분리 | Claude Code 완전 재시작 (현재 창 종료 → 새 PowerShell) |
+| `claude login` 영구 멈춤 | Windows 방화벽 첫 프롬프트 미응답 | 방화벽 알림에서 'Allow' (개인 + 공용 체크) 후 재시도 |
+| 한국어 사용자명 + `npm i -g` 스톨 | Long Path 260자 한계 | STEP 0.5-2 `LongPathsEnabled` 등록 후 재시도 |
+| WSL Bun 은 되는데 PowerShell 에선 안 됨 | WSL ↔ Windows PATH 분리 | 네이티브 Windows Bun 별도 설치 (강의 표준) |
+| `/plugin install` 중간에 SSL/proxy 오류 | 사내 SSL 검사 또는 회사 프록시 | 개인 네트워크로 셋업 또는 IT 에 `github.com` · `anthropic.com` 화이트리스트 요청 |
+
+---
+
+# 🔒 보안 체크리스트
+
+- [ ] Bot 토큰은 `.env` 에만 보관 · Git commit / 채팅 / 화면 공유 금지
+- [ ] `/discord:access policy allowlist` 로 잠금 (open 정책 위험)
+- [ ] 페어링된 발신자는 **권한 프롬프트도 승인 가능** → 신뢰하는 본인 계정만
+- [ ] 광고 예산·메일 발송 같은 위험 작업은 권한 릴레이로 폰 승인 게이트
+- [ ] 토큰 노출 의심 즉시 Developer Portal Reset Token + `/discord:configure <new>` 재실행
+
+---
+
+# 📂 강의 연결
+
+- 본 스킬은 [클립 4-2 Discord 대본](../대본/4-2-discord-5min.md) 의 슬라이드 06 "설치 실습" 에서 호출.
+- 마스터 스킬 [`skills/mcp설치`](../../../../skills/mcp설치/) 의 4단계 표준을 Channels + Gmail/Calendar + 10종 MCP 결합으로 확장.
+- `~/.claude/skills/discord-channels-setup` 은 본 폴더로의 심볼릭 링크.
+- Part 10 AX 시스템 연결 :
+  - `daily-briefing` · 매일 09시 자동 브리핑 (Calendar + Gmail + 광고)
+  - `cs-responder` · 메일 도착 자동 응답 + 디스코드 통보
+  - `orchestrator` · 폰 DM 슬래시 → 30개 에이전트 호출
